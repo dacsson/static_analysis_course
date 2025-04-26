@@ -89,6 +89,10 @@
 
 Точность не изменится. Soundness как была такая и осталась.
 
+\begin{quote}
+   \textit{ "...if typable, then no runtime type errors occurs..." }
+\end{quote}
+
 \section{Что будет, если в нашу систему типов ввести тип \(Array\)?}
 
 По аналогии введём литера массива, а также пустой массив:
@@ -122,14 +126,14 @@
 main() {
     var x,y,z,t;
     x = {2,4,8,16,32,64};   [[x]]=[ [[2]] ]=[ int ]
-    
+
     y = x[x[3]];            [[3]]=int^x=[int]=>[[x[3]]]=int=>[[x[x[3]]]]=int
                                 =>[[y]]=int
-                                
+
     z = {{},x};             [[{}]]=[a]^[[x]]=[int]=>[[z]]= [[int]]
-    
+
     t = z[1];               [[z]]=[[int]]^[[1]]=int=>[[t]]=[int]
-    
+
     t[2] = y;               [[y]]=int^[[2]]=int^[[t]]=[int]=>[[t[2]]]=int
 }
 \end{lstlisting}
