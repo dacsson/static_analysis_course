@@ -2,6 +2,13 @@
 \usepackage[T1, T2A]{fontenc}% T2A for Cyrillic font encoding
 \usepackage[english, russian]{babel}
 \usepackage{listings}
+\usepackage{mdframed}
+\usepackage{csquotes}
+\usepackage{graphicx}
+\usepackage{stmaryrd}
+\usepackage[colorlinks]{hyperref}
+\usepackage{biblatex} %Imports biblatex package
+\addbibresource{bible.bib} %Import the bibliography file
 
 \lstloadlanguages{C,C++,csh,Java}
 % \usepackage{mathptmx}
@@ -25,9 +32,9 @@
 \begin{center}
 \renewcommand{\arraystretch}{1.5}
 \begin{tabular}{ m{6cm} m{6cm} }
-    \(I \) & \([[I]] = int\) \\  
-    \(E_1 == E_2 \) & \([[E_1]] == [[E_2]] \wedge [[E_1 \ op \ E_2]] = int\) \\ 
-    \(E_1 op E_2 \) & \([[E_1]] == [[E_2]] == [[E_1 \ op \ E_2]] = int\) \\ 
+    \(I \) & \([[I]] = int\) \\
+    \(E_1 == E_2 \) & \([[E_1]] == [[E_2]] \wedge [[E_1 \ op \ E_2]] = int\) \\
+    \(E_1 op E_2 \) & \([[E_1]] == [[E_2]] == [[E_1 \ op \ E_2]] = int\) \\
     \(input\) & \([[input]] = int\) \\
     \(X = E\) & \([[X]] = [[E]]\) \\
     \(output \ E\) & \([[E]] = int\) \\
@@ -59,11 +66,11 @@
 \begin{center}
 \renewcommand{\arraystretch}{1.5}
 \begin{tabular}{ m{6cm} m{6cm} }
-    \(I \) & \([[I]] = int\) \\  
+    \(I \) & \([[I]] = int\) \\
     \(B \) & \([[B]]] = boolean\) \\
-    \(E_1 \ > \  E_2 \) & \([[E_1]] == [[E_2]] = int \wedge [[E_1 \ > \ E_2]] = boolean\) \\ 
-    \(E_1 \ == \  E_2 \) & \([[E_1]] == [[E_2]] == [[E_1 \ == \ E_2]] = boolean\) \\ 
-    \(E_1 \ op \ E_2 \) & \([[E_1]] == [[E_2]] == [[E_1 \ op \ E_2]] = int\) \\ 
+    \(E_1 \ > \  E_2 \) & \([[E_1]] == [[E_2]] = int \wedge [[E_1 \ > \ E_2]] = boolean\) \\
+    \(E_1 \ == \  E_2 \) & \([[E_1]] == [[E_2]] == [[E_1 \ == \ E_2]] = boolean\) \\
+    \(E_1 \ op \ E_2 \) & \([[E_1]] == [[E_2]] == [[E_1 \ op \ E_2]] = int\) \\
     \(input\) & \([[input]] = \alpha\) \\
     \(X = E\) & \([[X]] = [[E]]\) \\
     \(output \ E\) & \([[E]] = \alpha\) \\
@@ -157,5 +164,226 @@ main() {
     \(  [[z]] = [\ [\ int\ ]\ ] \) \\
     \(  [[t]] = int \) \\
 \end{center}
+
+\section{Дополнительные задания}
+
+\begin{mdframed}
+\textbf{Exercise 3.9, p. 24}: This exercise demonstrates the importance of the term equality
+axiom. First explain what the following TIP code does when it is executed:
+
+\begin{center}
+\begin{lstlisting}
+var x,y;
+x = alloc 1;
+y = alloc (alloc 2);
+x = y;
+\end{lstlisting}
+\end{center}
+
+Then generate the type constraints for the code, and apply the unification
+algorithm (by hand).
+
+\end{mdframed}
+
+\textbf{Что делает этот код}:
+\begin{enumerate}
+    \item Объявляет две перемеенные Х и Й
+    \item Аллоцирует ячейку памяти со значением 1 (Х - поинтер)
+    \item Аллоцирует ячейку памяти со значением аллокации ячейки памяти со значением 2, иначе говоря Й - это птр на птр со значением 2
+    \item Х приравнивается к Й \( \rightarrow\) икс теперь хранит ссылку на п.3
+\end{enumerate}
+
+\textbf{Протипизируем программу:}
+\begin{center}
+\begin{lstlisting}
+var x,y;                //
+x = alloc 1;            // [[x]] = [[alloc 1]]
+y = alloc (alloc 2);    // [[y]] = [[alloc [[alloc 2]] ]]
+x = y;                  // [[x]] = [[y]]
+\end{lstlisting}
+\end{center}
+
+Получаем:
+\begin{center}
+\begin{lstlisting}
+[[x]] = &int
+[[y]] = &&int
+[[x]] /= [[y]]
+\end{lstlisting}
+\end{center}
+
+\section{Результат реализации TypeAnalysis в TIP}
+
+Тестировал на программе:
+\begin{lstlisting}
+g(a){
+    return *a;
+}
+
+f(){
+    var a;
+    var b;
+    a=10;
+    if( a == 10 ){
+        b=g(&a);
+    }
+
+    return a;
+}
+\end{lstlisting}
+
+Вывод анализа:
+\begin{figure}
+    \centering
+    \includegraphics[scale=0.6]{image.png}
+    \caption{Результат TypeAnalysis}
+    \label{fig:enter-label}
+\end{figure}
+
+% === #2 ===
+\chapter{Теория решёток}
+
+\section{Почему нам не подходит конкретный домен?}
+Для начала я обратился к \cite{Bydge06} чтобы понять вообще разницу между абстрактным и конкретным доменами (пусть и кажется оно интуитивным). Там приводится пример \textit{complete lattice}, которую называюь \textit{concrete semantic domain}. Используется анализ множества возможных состояний программы, имея такую решётку и функции трансформации можно теоритически вывести все `контексты`, возможные состояния программы, однако это было бы просто невычислимо, учитывая точность такого анализа.
+
+Если бы нам хотелось использовать конкретный домен для определения знака в выражении, тогда мы могли бы выбрать например домен целых чисел. Тогда необходимо было бы знать конкретное значение числа для переменной, что конечно делает анализ бесконечно сложным в теории.
+
+\section{У решетки есть максимальный и минимальный элементы...}
+
+\subsection{Являются ли они точной верхней или нижней гранью какого-либо
+подмножества S?}
+
+Да! Доказать это можно через следующие определения \cite{StanCS353}:
+
+\begin{quote}
+A \textit{semilattice} is a partial order $(X, \leq)$ in which every doubleton $\{x, y\}$ has a least upper bound, denoted $x \vee y$ and called the \textit{join} of $x$ and $y$. Even though the relation $\leq$ is partial (i.e., not linear as an order), the operation $\vee$ is total ($x \vee y$ is well-defined for all elements $x, y \in X$).
+\end{quote}
+
+\begin{quote}
+    With this definition there is a dual notion, that of lower semilattice (so “semilattice” in the above means “upper semilattice”), in which every doubleton has a greatest lower bound, denoted x $\wedge$ y and called their \textit{meet}.
+\end{quote}
+
+Определение решётки затем складывается из нижней полурешётки и верхней полурешётки:
+
+\begin{quote}
+A \textit{lattice} is a poset that is simultaneously an \textit{upper semilattice} and a \textit{lower semilattice.}
+\end{quote}
+
+Для \textit{upper semilattice} и \textit{lower semilattice} определены \(join\) и \( meet\), следовательно они присущи и решётке.
+
+Из чего можно сделать вывод: решётка всегда имеет как точную верхнюю грань, так и точную нижнюю грань для любого конечного подмножества $S$, поскольку операции \(join\) и \( meet\) определены для всех пар элементов. Максимальный элемент решётки является точной верхней гранью всего множества, а минимальный — его точной нижней гранью.
+
+\subsection{Уникальны ли они?}
+
+\textit{Least upper bound} и \textit{greatest lower bound} решётки должны быть уникальны, но просто \textit{upper bound} и \textit{lower bound} для каких-либо \{a, b\} не обязаны быть уникальными.
+
+\section{Произведения решёток}
+
+\subsection{Как выглядит $\sqcup$ и $\sqcap$ для $L_1 \times L_2 \times . . . \times L_n$?}
+
+Напомню сам себе определения:
+\begin{itemize}
+    \item $\sqcup \space L$ -
+        $X \sqsubseteq \bigsqcup X \space \vee \space \forall y \in S : X \sqsubseteq y \Rightarrow \bigsqcup X \sqsubseteq y$
+
+    \item $\sqcap \space L$ -
+        $ \bigsqcap X \sqsubseteq  X \space \vee \space \forall y \in S : y \sqsubseteq X \Rightarrow  y \sqsubseteq \bigsqcap X $
+\end{itemize}
+
+Достаточно посмотреть на получившуюся после перемножения решётку:
+
+\begin{figure}[h]
+    \centering
+    \includegraphics[width=0.5\linewidth]{lattice_product.png}
+    \caption{Перемножение решёток}
+    \label{fig:latproduct}
+\end{figure}
+
+На ней и видно, что операции $\sqcup$ и $\sqcap$ определяются \textit{покоординатно} следующим образом:
+
+$$
+(a_1, a_2, \dots, a_n) \sqcup (b_1, b_2, \dots, b_n) = (a_1 \sqcup b_1,\; a_2 \sqcup b_2,\; \dots,\; a_n \sqcup b_n)
+$$
+$$
+(a_1, a_2, \dots, a_n) \sqcap (b_1, b_2, \dots, b_n) = (a_1 \sqcap b_1,\; a_2 \sqcap b_2,\; \dots,\; a_n \sqcap b_n)
+$$
+
+\subsection{Какая высота у произведения решеток $L_1 \times L_2 \times . . . \times L_n$?}
+
+\[
+{height}(L_1 \times \dots \times L_n) =
+{height}(L_1) + \dots + {height}(L_n)
+\]
+
+\section{Точная верхняя/нижняя грань решётки отображений}
+
+Пусть $ f $ — функция отображения. Тогда:
+
+$$
+f_\top(x) = \top \space \forall x \in A,
+$$
+$$
+f_\bot(x) = \bot \space \forall x \in A.
+$$
+
+Эти отображения являются соответственно наибольшим и наименьшим элементами решётки отображений $ A \to L $.
+
+\section{Высота решётки отображений}
+
+Высота решётки отображений $ A \to L $ выражается через мощность области определения $ A $ и высоту базовой решётки $ L $:
+
+$$
+{height}(A \to L) = |A| \cdot{height}(L).
+$$
+
+\section{Почему нельзя использовать унификационный решатель?}
+
+Потому что у нас \textit{data-flow sensitive} анализ, надо знать о предыдущих состояниях. Особенно когда, например, мы приходим из разных веток \textit{if-else}. Поэтому у нас и существует \textit{JOIN} операция.
+
+\section{Результат реализации SignAnalysis в TIP}
+
+Тестил над файлом:
+\begin{lstlisting}
+fun(x) {
+    var y;
+    var k ;
+    k = 8;
+    y = 7;
+    while(k > y) {
+        k = k - 1;
+    }
+    return 0;
+}
+main() {
+    var pos, neg, top, zero;
+    var later;
+    pos = 5 + 5;
+    pos = 5 * 5;
+    neg = -5 - 5;
+    neg = -5 * 5;
+    neg = 5 * -5;
+    top = 5 - 5;
+    top = top * 5;
+    zero = top * 0;
+    zero = 5 * zero;
+    later = 7;
+    return 0;
+}
+\end{lstlisting}
+
+Вывод в виде графа:
+
+\begin{figure}
+    \centering
+    \includegraphics[scale=0.2]{signs.png}
+    \caption{Резульат SignAnalysis}
+    \label{fig:hi}
+\end{figure}
+
+% % === #REF ===
+% \chapter{Литература}
+
+% В процессе ответов на вопросы, да и в целом изучения курса я пользовался следующими материалами:
+\printbibliography
 
 \end{document}

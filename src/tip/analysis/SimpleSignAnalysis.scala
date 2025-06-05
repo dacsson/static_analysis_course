@@ -63,7 +63,7 @@ class SimpleSignAnalysis(cfg: ProgramCfg)(implicit declData: DeclarationData) ex
           case _ => ???
         }
       case _: AInput => valuelattice.top
-      case _ => ???
+      case _ => valuelattice.bottom // bottom -> NaN couldnt reason about signess
     }
   }
 
@@ -85,10 +85,14 @@ class SimpleSignAnalysis(cfg: ProgramCfg)(implicit declData: DeclarationData) ex
       case r: CfgStmtNode =>
         r.data match {
           // var declarations
-          case varr: AVarStmt => ??? //<--- Complete here
+          case varr: AVarStmt =>
+            // add to map with pair Var -> UnknownYetSign a.k.a bottom of lattice
+            s ++ varr.declIds.map { it => (it, SignLattice.bottom) }.toMap
 
           // assignments
-          case AAssignStmt(id: AIdentifier, right, _) => ??? //<--- Complete here
+          case AAssignStmt(id: AIdentifier, right, _) =>
+            // [x = E] : [v] = JOIN(v)[x -> eval(JOIN(v), E]
+            s.updated(id, eval(right, s))
 
           // all others: like no-ops
           case _ => s
