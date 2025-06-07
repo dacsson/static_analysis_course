@@ -6,6 +6,8 @@ import tip.lattices.IntervalLattice._
 import tip.lattices._
 import tip.solvers._
 
+import scala.math.Ordering.Implicits.infixOrderingOps
+
 trait IntervalAnalysisWidening extends ValueAnalysisMisc with Dependencies[CfgNode] {
 
   import tip.cfg.CfgOps._
@@ -35,7 +37,9 @@ trait IntervalAnalysisWidening extends ValueAnalysisMisc with Dependencies[CfgNo
     (x, y) match {
       case (IntervalLattice.EmptyInterval, _) => y
       case (_, IntervalLattice.EmptyInterval) => x
-      case ((l1, h1), (l2, h2)) => ??? //<--- Complete here
+      case ((l1, h1), (l2, h2)) =>
+        // [[l1, h1]] op [[l2, h2]] = [[min x1 op y1 , max x2 op y2]] ???
+        (maxB(l1 min l2), minB(h1 max h2))
     }
 
   def widen(x: liftedstatelattice.Element, y: liftedstatelattice.Element): liftedstatelattice.Element =
