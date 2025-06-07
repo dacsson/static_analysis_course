@@ -2,6 +2,9 @@ package tip.lattices
 
 import tip.lattices.IntervalLattice.{IntNum, MInf, Num, PInf}
 
+import scala.annotation.tailrec
+import scala.language.implicitConversions
+
 object VariableSizeLattice extends LatticeWithOps {
 
   sealed trait Type extends Ordered[Type] {
@@ -73,8 +76,14 @@ object VariableSizeLattice extends LatticeWithOps {
   private def signs(a: Element): Set[Int] =
     a match {
       case (MInf, PInf, _) => Set(-1, 0, +1)
-      case (MInf, IntNum(x), _) => if (x > 0) Set(-1, 0, +1, x) else if (x == 0) Set(-1, 0) else Set(x, -1)
-      case (IntNum(x), PInf, _) => if (x < 0) Set(x, -1, 0, +1) else if (x == 0) Set(0, +1, x) else Set(+1, x)
+      case (MInf, IntNum(x), _) =>
+        if (x > 0) Set(-1, 0, +1, x)
+        else if (x == 0) Set(-1, 0)
+        else Set(x, -1)
+      case (IntNum(x), PInf, _) =>
+        if (x < 0) Set(x, -1, 0, +1)
+        else if (x == 0) Set(0, +1, x)
+        else Set(+1, x)
       case (IntNum(l), IntNum(h), _) =>
         Set(-1, +1, 0, l, h).filter { x =>
           x <= h && x >= l
@@ -115,15 +124,20 @@ object VariableSizeLattice extends LatticeWithOps {
       case (_, _, TAny) => FullInterval
       case (_, _, TNothing) => EmptyInterval
       case (MInf, PInf, _) => (MInf, PInf, TBigInt)
-      case (MInf, IntNum(x), _) => if (b == 0) (0, 0, TBool) else if (b < 0) (op(x, b), PInf, TBigInt) else (MInf, op(x, b), TBigInt)
-      case (IntNum(x), PInf, _) => if (b == 0) (0, 0, TBool) else if (b < 0) (MInf, op(x, b), TBigInt) else (op(x, b), PInf, TBigInt)
+      case (MInf, IntNum(x), _) =>
+        if (b == 0) (0, 0, TBool)
+        else if (b < 0) (op(x, b), PInf, TBigInt)
+        else (MInf, op(x, b), TBigInt)
+      case (IntNum(x), PInf, _) => if (b == 0) (0, 0, TBool)
+        else if (b < 0) (MInf, op(x, b), TBigInt)
+        else (op(x, b), PInf, TBigInt)
       case (IntNum(x), IntNum(y), _) =>
         val low = min(Set(op(x, b), op(y, b)))
         val high = max(Set(op(x, b), op(y, b)))
         (low, high, resolveType(low, high))
     }
 
-  implicit def int2num(i: Int): IntNum = IntNum(i)
+  implicit def IntToNum(i: Int): IntNum = IntNum(i)
 
   def resolveType(low: Num, high: Num): Type =
     if (low == MInf || low == PInf || high == MInf || high == PInf) TBigInt
@@ -132,6 +146,7 @@ object VariableSizeLattice extends LatticeWithOps {
     else if (0 <= low && high <= 65535) TChar
     else TInt
 
+  @tailrec
   override def lub(x: Element, y: Element): Element =
     (x, y) match {
       case ((_, _, TAny), _) | (_, (_, _, TAny)) => FullInterval
